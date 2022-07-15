@@ -6,6 +6,9 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
+  sendSignInLinkToEmail,
+  isSignInWithEmailLink,
+  signInWithEmailLink,
 } from "firebase/auth";
 // import SignIn from "./SignIn";
 // import SignUp from "./SignUp";
@@ -39,7 +42,6 @@ const firebaseConfig = {
   appId: "1:83111206827:web:f7bc2274def0a45bf9fcee",
 };
 
-
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
@@ -50,24 +52,54 @@ const auth = getAuth();
 // the current logged in user
 const user = auth.currentUser;
 
-const displayName = ""
-const email = ""
-const photoURL = ""
-const emailVerified = ""
+// const displayName = "";
+// const email = "";
+// const photoURL = "";
+// const emailVerified = "";
 
-if (user !== null) {
-  console.log("user is not null")
-  // The user object has basic properties such as display name, email, etc.
-  console.log(user.displayName);
-  console.log( user.email);
-  console.log("photourl: "+ user.photoURL);
-  console.log(user.emailVerified);
+// // example of how to get a users profile information
+// if (user !== null) {
+//   console.log("user is not null");
+//   // The user object has basic properties such as display name, email, etc.
+//   console.log(user.displayName);
+//   console.log(user.email);
+//   console.log("photourl: " + user.photoURL);
+//   console.log(user.emailVerified);
 
-  // The user's ID, unique to the Firebase project. Do NOT use
-  // this value to authenticate with your backend server, if
-  // you have one. Use User.getToken() instead.
+//   // The user's ID, unique to the Firebase project. Do NOT use
+//   // this value to authenticate with your backend server, if
+//   // you have one. Use User.getToken() instead.
 
-  // uid = user.uid;
+//   // uid = user.uid;
+// }
+
+if (isSignInWithEmailLink(auth, window.location.href)) {
+  // Additional state parameters can also be passed via URL.
+  // This can be used to continue the user's intended action before triggering
+  // the sign-in operation.
+  // Get the email if available. This should be available if the user completes
+  // the flow on the same device where they started it.
+  let email = window.localStorage.getItem("emailForSignIn");
+  if (!email) {
+    // User opened the link on a different device. To prevent session fixation
+    // attacks, ask the user to provide the associated email again. For example:
+    email = window.prompt("Please provide your email for confirmation");
+  }
+  // The client SDK will parse the code from the link for you.
+  signInWithEmailLink(auth, email, window.location.href)
+    .then((result) => {
+      // Clear email from storage.
+      window.localStorage.removeItem("emailForSignIn");
+      // You can access the new user via result.user
+      // Additional user info profile not available via:
+      // result.additionalUserInfo.profile == null
+      // You can check if the user is new or existing:
+      // result.additionalUserInfo.isNewUser
+    })
+    .catch((error) => {
+      // Some error occurred, you can inspect the code: error.code
+      // Common errors could be invalid email and invalid or expired OTPs.
+    });
 }
 
 
@@ -84,8 +116,6 @@ onAuthStateChanged(auth, (user) => {
     // ...
   }
 });
-
-
 
 // Create New Account Component MUI
 function Copyright(props) {
@@ -109,7 +139,6 @@ function Copyright(props) {
 const theme = createTheme();
 
 function SignUp() {
-  
   const handleSubmit = (event) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
@@ -251,7 +280,6 @@ function SignUp() {
 // SignIn MUI Template Component
 
 function SignIn() {
-  
   const handleSignInSubmit = (event) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
@@ -280,7 +308,7 @@ function SignIn() {
           // ...
         })
         .catch((error) => {
-          console.log("no user with these credentials exists")
+          console.log("no user with these credentials exists");
           const errorCode = error.code;
           const errorMessage = error.message;
         });
@@ -365,15 +393,117 @@ function SignIn() {
   );
 }
 
-function App() {
-  
-  
+// Email Link Verification Component
 
-  
+function EmailLink() {
+  const handleEmailLinkSubmit = (event) => {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    console.log({
+      email: data.get("email"),
+    });
+
+    const actionCodeSettings = {
+      // URL you want to redirect back to. The domain (www.example.com) for this
+      // URL must be in the authorized domains list in the Firebase Console.
+      url: "http://localhost:3000",
+      // This must be true.
+      handleCodeInApp: true,
+      // iOS: {
+      //   bundleId: "com.example.ios",
+      // },
+      // android: {
+      //   packageName: "com.example.android",
+      //   installApp: true,
+      //   minimumVersion: "12",
+      // },
+      // dynamicLinkDomain: "example.page.link",
+    };
+
+    sendSignInLinkToEmail(auth, data.get("email"), actionCodeSettings)
+      .then(() => {
+        // The link was successfully sent. Inform the user.
+        // Save the email locally so you don't need to ask the user for it again
+        // if they open the link on the same device.
+        window.localStorage.setItem("emailForSignIn", data.get("email"));
+        let emaillog = window.localStorage.getItem("emailForSignIn");
+        console.log("Stored email: " + emaillog);
+        // ...
+      })
+      .catch((error) => {
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        // ...
+      });
+  };
+
+  return (
+    <ThemeProvider theme={theme}>
+      <Container component="main" maxWidth="xs">
+        <CssBaseline />
+        <Box
+          sx={{
+            marginTop: 8,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+          }}
+        >
+          <Avatar sx={{ m: 1, bgcolor: "secondary.main" }}>
+            <LockOutlinedIcon />
+          </Avatar>
+          <Typography component="h1" variant="h5">
+            Email Link Verification
+          </Typography>
+          <Box
+            component="form"
+            onSubmit={handleEmailLinkSubmit}
+            noValidate
+            sx={{ mt: 1 }}
+          >
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              id="email"
+              label="Email Address"
+              name="email"
+              autoComplete="email"
+              autoFocus
+            />
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              sx={{ mt: 3, mb: 2 }}
+            >
+              Send Email Link
+            </Button>
+            <Grid container>
+              <Grid item xs>
+                <Link href="#" variant="body2">
+                  Forgot password?
+                </Link>
+              </Grid>
+              <Grid item>
+                <Link href="#" variant="body2">
+                  {"Don't have an account? Sign Up"}
+                </Link>
+              </Grid>
+            </Grid>
+          </Box>
+        </Box>
+        <Copyright sx={{ mt: 8, mb: 4 }} />
+      </Container>
+    </ThemeProvider>
+  );
+}
+
+function App() {
   return (
     <div className="App">
       <header className="App-header">This is first page</header>
-      <div> {displayName} {email} {photoURL} {emailVerified} </div>
+
       <Button
         fullWidth
         variant="contained"
@@ -382,7 +512,7 @@ function App() {
           signOut(auth)
             .then(() => {
               // Sign-out successful.
-              console.log('Sign out successful')
+              console.log("Sign out successful");
             })
             .catch((error) => {
               // An error happened.
@@ -393,6 +523,7 @@ function App() {
       </Button>
       <SignUp />
       <SignIn />
+      <EmailLink />
     </div>
   );
 }
