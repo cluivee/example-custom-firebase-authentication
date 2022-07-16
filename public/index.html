@@ -30,7 +30,34 @@
     -->
     <title>React App</title>
   </head>
+  <div id="fb-root"></div>
+  <script
+    async
+    defer
+    crossorigin="anonymous"
+    src="https://connect.facebook.net/en_GB/sdk.js#xfbml=1&version=v14.0&appId=560534122238576&autoLogAppEvents=1"
+    nonce="gWv107rG"
+  ></script>
   <body>
+    <!-- Following is the Facebook SDK for JS -->
+    <script>
+      window.fbAsyncInit = function () {
+        FB.init({
+          appId: "560534122238576",
+          autoLogAppEvents: true,
+          xfbml: true,
+          version: "v14.0",
+        });
+      };
+    </script>
+    <script
+      async
+      defer
+      crossorigin="anonymous"
+      src="https://connect.facebook.net/en_US/sdk.js"
+    ></script>
+    <!-- End of Facebook SDK for JS -->
+
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
     <!--

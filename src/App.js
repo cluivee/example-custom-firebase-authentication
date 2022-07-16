@@ -9,6 +9,9 @@ import {
   sendSignInLinkToEmail,
   isSignInWithEmailLink,
   signInWithEmailLink,
+  GoogleAuthProvider,
+  FacebookAuthProvider,
+  signInWithPopup,
 } from "firebase/auth";
 // import SignIn from "./SignIn";
 // import SignUp from "./SignUp";
@@ -32,6 +35,12 @@ import { createTheme, ThemeProvider } from "@mui/material/styles";
 import validator, { isEmail, isStrongPassword } from "validator";
 import { useState } from "react";
 
+// npm package "React Social Login Buttons" widgets
+import {
+  FacebookLoginButton,
+  GoogleLoginButton,
+} from "react-social-login-buttons";
+
 // Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyApO_RmF_i4oZglgdAaiZwHNO4mWDCsbO8",
@@ -51,6 +60,8 @@ const auth = getAuth();
 
 // the current logged in user
 const user = auth.currentUser;
+
+const provider = new GoogleAuthProvider();
 
 // const displayName = "";
 // const email = "";
@@ -102,13 +113,14 @@ if (isSignInWithEmailLink(auth, window.location.href)) {
     });
 }
 
-
 onAuthStateChanged(auth, (user) => {
   if (user) {
     // User is signed in, see docs for a list of available properties
     // https://firebase.google.com/docs/reference/js/firebase.User
     const uid = user.uid;
-    console.log("Auth state changed, user is: " + uid);
+    console.log(
+      "Auth state changed, user is: " + uid + " username: " + user.email
+    );
     // ...
   } else {
     console.log("Auth state changed, Logged Out");
@@ -500,30 +512,90 @@ function EmailLink() {
 }
 
 function App() {
+  function GoogleHandleClick(event) {
+    console.log("Google Sign in clicked: ");
+
+    signInWithPopup(auth, provider)
+      .then((result) => {
+        // This gives you a Google Access Token. You can use it to access the Google API.
+        const credential = GoogleAuthProvider.credentialFromResult(result);
+        const token = credential.accessToken;
+        // The signed-in user info.
+        const user = result.user;
+        // ...
+      })
+      .catch((error) => {
+        // Handle Errors here.
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        // The email of the user's account used.
+        const email = error.customData.email;
+        // The AuthCredential type that was used.
+        const credential = GoogleAuthProvider.credentialFromError(error);
+        // ...
+      });
+  }
+  function FacebookHandleClick() {
+    console.log("Facebook Sign in clicked: ");
+    const provider = new FacebookAuthProvider();
+
+    signInWithPopup(auth, provider)
+      .then((result) => {
+        // The signed-in user info.
+        const user = result.user;
+
+        // This gives you a Facebook Access Token. You can use it to access the Facebook API.
+        const credential = FacebookAuthProvider.credentialFromResult(result);
+        const accessToken = credential.accessToken;
+
+        // ...
+      })
+      .catch((error) => {
+        // Handle Errors here.
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        // The email of the user's account used.
+        const email = error.customData.email;
+        // The AuthCredential type that was used.
+        const credential = FacebookAuthProvider.credentialFromError(error);
+
+        // ...
+      });
+  }
+
   return (
     <div className="App">
       <header className="App-header">This is first page</header>
-
-      <Button
-        fullWidth
-        variant="contained"
-        sx={{ mt: 3, mb: 2, width: "50%" }}
-        onClick={() => {
-          signOut(auth)
-            .then(() => {
-              // Sign-out successful.
-              console.log("Sign out successful");
-            })
-            .catch((error) => {
-              // An error happened.
-            });
-        }}
-      >
-        Log Out
-      </Button>
+      <Box textAlign="center">
+        <Button
+          fullWidth
+          variant="contained"
+          sx={{ width: "30%", justifyContent: "center" }}
+          onClick={() => {
+            signOut(auth)
+              .then(() => {
+                // Sign-out successful.
+                console.log("Sign out successful");
+              })
+              .catch((error) => {
+                // An error happened.
+              });
+          }}
+        >
+          Log Out
+        </Button>
+      </Box>
       <SignUp />
       <SignIn />
       <EmailLink />
+      <GoogleLoginButton
+        onClick={GoogleHandleClick}
+        style={{ width: "30%", margin: "5px auto 0", display: "block" }}
+      />
+      <FacebookLoginButton
+        onClick={FacebookHandleClick}
+        style={{ width: "30%", margin: "5px auto 0", display: "block" }}
+      />
     </div>
   );
 }
