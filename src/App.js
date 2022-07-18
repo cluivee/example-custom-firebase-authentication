@@ -33,7 +33,7 @@ import Container from "@mui/material/Container";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 
 import validator, { isEmail, isStrongPassword } from "validator";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 // npm package "React Social Login Buttons" widgets
 import {
@@ -84,6 +84,10 @@ const provider = new GoogleAuthProvider();
 //   // uid = user.uid;
 // }
 
+
+// 18.07.2022 this is slightly buggy, as it won't say "sign in successful" on successful login here, but I'm keeping this method outside
+// the App component because it causes problems with asking for the email 4 times if I put it in the app component.
+
 if (isSignInWithEmailLink(auth, window.location.href)) {
   // Additional state parameters can also be passed via URL.
   // This can be used to continue the user's intended action before triggering
@@ -113,22 +117,6 @@ if (isSignInWithEmailLink(auth, window.location.href)) {
     });
 }
 
-onAuthStateChanged(auth, (user) => {
-  if (user) {
-    // User is signed in, see docs for a list of available properties
-    // https://firebase.google.com/docs/reference/js/firebase.User
-    const uid = user.uid;
-    console.log(
-      "Auth state changed, user is: " + uid + " username: " + user.email
-    );
-    // ...
-  } else {
-    console.log("Auth state changed, Logged Out");
-    // User is signed out
-    // ...
-  }
-});
-
 // Create New Account Component MUI
 function Copyright(props) {
   return (
@@ -150,7 +138,9 @@ function Copyright(props) {
 
 const theme = createTheme();
 
-function SignUp() {
+function SignUp(props) {
+  const [signUpErrorText, setsignUpErrorText] = useState('')
+
   const handleSubmit = (event) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
@@ -161,11 +151,14 @@ function SignUp() {
     });
 
     if (!isEmail(data.get("email"))) {
-      console.log("email invalid, please enter a valid email");
+      console.log("Email invalid, please enter a valid email");
+      setsignUpErrorText("Not a valid email, please enter a valid email");
+      
     } else if (!isStrongPassword(data.get("password"), { minUppercase: 0 })) {
       console.log(
-        "password is not strong enough, please choose another password"
+        "Password is not strong enough, min characters: 8, min numerical: 1, min symbols: 1,  please choose another password"
       );
+      setsignUpErrorText("Password is not strong enough, min characters: 8, min numerical: 1, min symbols: 1,  please choose another password")
     } else if (
       isEmail(data.get("email")) &&
       isStrongPassword(data.get("password"), { minUppercase: 0 })
@@ -178,6 +171,7 @@ function SignUp() {
         .then((userCredential) => {
           // Signed in
           const user = userCredential.user;
+          props.setSignInSuccessfulText("Sign in successful!");
           // ...
         })
         .catch((error) => {
@@ -258,12 +252,7 @@ function SignUp() {
                 />
               </Grid>
               <Grid item xs={12}>
-                <FormControlLabel
-                  control={
-                    <Checkbox value="allowExtraEmails" color="primary" />
-                  }
-                  label="I want to receive inspiration, marketing promotions and updates via email."
-                />
+                <div style={{fontSize:'0.75rem', color: 'red'}}>{signUpErrorText}</div>
               </Grid>
             </Grid>
             <Button
@@ -291,7 +280,7 @@ function SignUp() {
 
 // SignIn MUI Template Component
 
-function SignIn() {
+function SignIn(props) {
   const handleSignInSubmit = (event) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
@@ -317,6 +306,8 @@ function SignIn() {
         .then((userCredential) => {
           // Signed in
           const user = userCredential.user;
+          props.setSignInSuccessfulText("Sign in successful!");
+
           // ...
         })
         .catch((error) => {
@@ -512,6 +503,28 @@ function EmailLink() {
 }
 
 function App() {
+  const [signedInUsername, setsignedInUsername] = useState("Logged Out");
+  const [signInSuccessfulText, setSignInSuccessfulText] = useState("");
+
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      // User is signed in, see docs for a list of available properties
+      // https://firebase.google.com/docs/reference/js/firebase.User
+      const uid = user.uid;
+      console.log(
+        "Auth state changed, user is: " + uid + " username: " + user.email
+      );
+      setsignedInUsername("Signed in user: " + user.email);
+      // ...
+    } else {
+      console.log("Auth state changed, Logged Out");
+      // User is signed out
+      // ...
+    }
+  });
+
+
+  
   function GoogleHandleClick(event) {
     console.log("Google Sign in clicked: ");
 
@@ -523,6 +536,8 @@ function App() {
         // The signed-in user info.
         const user = result.user;
         // ...
+
+        setSignInSuccessfulText("Sign in successful!");
       })
       .catch((error) => {
         // Handle Errors here.
@@ -548,6 +563,8 @@ function App() {
         const credential = FacebookAuthProvider.credentialFromResult(result);
         const accessToken = credential.accessToken;
 
+        setSignInSuccessfulText("Sign in successful!");
+
         // ...
       })
       .catch((error) => {
@@ -565,7 +582,10 @@ function App() {
 
   return (
     <div className="App">
-      <header className="App-header">This is first page</header>
+      <header className="App-header">This is the first page</header>
+      <div>{signedInUsername}</div>
+      <div>{signInSuccessfulText}</div>
+      <div></div>
       <Box textAlign="center">
         <Button
           fullWidth
@@ -576,6 +596,8 @@ function App() {
               .then(() => {
                 // Sign-out successful.
                 console.log("Sign out successful");
+                setsignedInUsername("Logged out");
+                setSignInSuccessfulText("Log Out successful");
               })
               .catch((error) => {
                 // An error happened.
@@ -585,8 +607,8 @@ function App() {
           Log Out
         </Button>
       </Box>
-      <SignUp />
-      <SignIn />
+      <SignUp setSignInSuccessfulText={setSignInSuccessfulText}/>
+      <SignIn setSignInSuccessfulText={setSignInSuccessfulText}/>
       <EmailLink />
       <GoogleLoginButton
         onClick={GoogleHandleClick}
