@@ -35,7 +35,7 @@ import Container from "@mui/material/Container";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 
 import validator, { isEmail, isStrongPassword } from "validator";
-import { useEffect, useState } from "react";
+import { createContext, useEffect, useRef, useState } from "react";
 
 // npm package "React Social Login Buttons" widgets
 import {
@@ -59,28 +59,66 @@ const app = initializeApp(firebaseConfig);
 // Initialize Firebase Authentication and get a reference to the service
 
 const auth = getAuth();
-const provider = new GoogleAuthProvider();
 
-  // the current logged in user
-  let currentUser = auth.currentUser;
+// the current logged in user
+let currentUser = auth.currentUser;
 
-onAuthStateChanged(auth, (user) => {
-  if (user) {
-    // User is signed in, see docs for a list of available properties
-    // https://firebase.google.com/docs/reference/js/firebase.User
-    const uid = user.uid;
-    currentUser = user;
-    console.log(
-      "Auth state changed, user is: " + uid + " username: " + user.email
-    );
-    // setsignedInUsername("Signed in user: " + user.email);
-    // ...
-  } else {
-    console.log("Auth state changed, Logged Out");
-    // User is signed out
-    // ...
-  }
-});
+
+
+
+function GoogleHandleClick(event) {
+  console.log("Google Sign in clicked: ");
+
+  const provider = new GoogleAuthProvider();
+
+  signInWithPopup(auth, provider)
+    .then((result) => {
+      // This gives you a Google Access Token. You can use it to access the Google API.
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      const token = credential.accessToken;
+      // The signed-in user info.
+      const user = result.user;
+      // ...
+    })
+    .catch((error) => {
+      // Handle Errors here.
+      const errorCode = error.code;
+      const errorMessage = error.message;
+      // The email of the user's account used.
+      const email = error.customData.email;
+      // The AuthCredential type that was used.
+      const credential = GoogleAuthProvider.credentialFromError(error);
+      // ...
+    });
+}
+
+function FacebookHandleClick() {
+  console.log("Facebook Sign in clicked: ");
+  const provider = new FacebookAuthProvider();
+
+  signInWithPopup(auth, provider)
+    .then((result) => {
+      // The signed-in user info.
+      const user = result.user;
+
+      // This gives you a Facebook Access Token. You can use it to access the Facebook API.
+      const credential = FacebookAuthProvider.credentialFromResult(result);
+      const accessToken = credential.accessToken;
+
+      // ...
+    })
+    .catch((error) => {
+      // Handle Errors here.
+      const errorCode = error.code;
+      const errorMessage = error.message;
+      // The email of the user's account used.
+      const email = error.customData.email;
+      // The AuthCredential type that was used.
+      const credential = FacebookAuthProvider.credentialFromError(error);
+
+      // ...
+    });
+}
 
 // const displayName = "";
 // const email = "";
@@ -134,6 +172,7 @@ if (isSignInWithEmailLink(auth, window.location.href)) {
       // Common errors could be invalid email and invalid or expired OTPs.
     });
 }
+
 
 // Create New Account Component MUI
 function Copyright(props) {
@@ -264,8 +303,16 @@ function SignUp() {
               variant="contained"
               sx={{ mt: 3, mb: 2 }}
             >
-              Sign Up
+              Sign Up With Email
             </Button>
+            <GoogleLoginButton
+              onClick={GoogleHandleClick}
+              // style={{ margin: "5px auto 0", display: "block" }}
+            />
+            <FacebookLoginButton
+              onClick={FacebookHandleClick}
+              // style={{ margin: "5px auto 0", display: "block" }}
+            />
             <Grid container justifyContent="flex-end">
               <Grid item>
                 <Link href="#" variant="body2">
@@ -629,15 +676,15 @@ function ForgotPassword() {
 
 // Delete user component
 
-function DeleteUser(props) {
+function DeleteUser() {
   const [deleteUserErrorText, setdeleteUserErrorText] = useState("");
 
   const handleDeleteAccountSubmit = (event) => {
     event.preventDefault();
-    console.log(props.currentUser);
+    console.log(currentUser);
 
     if (window.confirm("Do you really want to delete your account?")) {
-      deleteUser(props.currentUser)
+      deleteUser(currentUser)
         .then(() => {
           console.log("user deleted: ");
           setdeleteUserErrorText("Account deleted successfully");
@@ -709,90 +756,57 @@ function DeleteUser(props) {
 }
 
 function App() {
+  console.log("App rerendered")
   const [signedInUsername, setsignedInUsername] = useState("Logged Out");
-  const [signInSuccessfulText, setSignInSuccessfulText] = useState("");
 
   const [showComponent, setshowComponent] = useState("SignUp");
+  
+  /* putting onAuthStateChanged in useEffect sets the onauthstate listener only once when App is first rendered, preventing
+  another listener being added when App is rerendered, thereby preventing infinite loops when we change the state in onauthstatechanged.
+  This solution took about 2 hours to find: https://stackoverflow.com/questions/61155701/how-to-prevent-infinite-loop-caused-by-onauthstatechanged-firebase-auth.
+  */
+  useEffect(() => {
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // User is signed in, see docs for a list of available properties
+        // https://firebase.google.com/docs/reference/js/firebase.User
+        const uid = user.uid;
+        currentUser = user;
+        console.log(
+          "Auth state changed, user is: " + uid + " username: " + user.email
+        );
+        setsignedInUsername("Signed In: " + user.email);
+        // ...
+      } else {
+        console.log("Auth state changed, Logged Out");
+        currentUser = user;
+        // User is signed out
+        // ...
+      }
+    });
+
+  }, [])
+  
+
+// this may get moved to a global scope again in the future, as I prefer all the firebase methods being global, and I don't like this function
+// getting rerun again when the App component rerenders
+
 
   const Switcher = () => {
-  
-    return (
-    <>
-
-    </>);
-    // switch (showComponent) {
-    //   case "SignUp":
-    //     return <SignUp />;
-    //   case "SignIn":
-    //     return <SignIn />;
-    //   case "DeleteUser":
-    //     return <DeleteUser />;
-    //   case "ForgotPassword":
-    //     return <ForgotPassword />;
-    //   default:
-    //     return <SignUp />;
-    // }
+    switch (showComponent) {
+      case "SignUp":
+        return <SignUp />;
+      case "SignIn":
+        return <SignIn />;
+      case "DeleteUser":
+        return <DeleteUser />;
+      case "ForgotPassword":
+        return <ForgotPassword />;
+      default:
+        return <SignUp />;
+    }
   };
-
-  function GoogleHandleClick(event) {
-    console.log("Google Sign in clicked: ");
-
-    signInWithPopup(auth, provider)
-      .then((result) => {
-        // This gives you a Google Access Token. You can use it to access the Google API.
-        const credential = GoogleAuthProvider.credentialFromResult(result);
-        const token = credential.accessToken;
-        // The signed-in user info.
-        const user = result.user;
-        // ...
-
-        setSignInSuccessfulText("Sign in successful!");
-      })
-      .catch((error) => {
-        // Handle Errors here.
-        const errorCode = error.code;
-        const errorMessage = error.message;
-        // The email of the user's account used.
-        const email = error.customData.email;
-        // The AuthCredential type that was used.
-        const credential = GoogleAuthProvider.credentialFromError(error);
-        // ...
-      });
-  }
-  function FacebookHandleClick() {
-    console.log("Facebook Sign in clicked: ");
-    const provider = new FacebookAuthProvider();
-
-    signInWithPopup(auth, provider)
-      .then((result) => {
-        // The signed-in user info.
-        const user = result.user;
-
-        // This gives you a Facebook Access Token. You can use it to access the Facebook API.
-        const credential = FacebookAuthProvider.credentialFromResult(result);
-        const accessToken = credential.accessToken;
-
-        setSignInSuccessfulText("Sign in successful!");
-
-        // ...
-      })
-      .catch((error) => {
-        // Handle Errors here.
-        const errorCode = error.code;
-        const errorMessage = error.message;
-        // The email of the user's account used.
-        const email = error.customData.email;
-        // The AuthCredential type that was used.
-        const credential = FacebookAuthProvider.credentialFromError(error);
-
-        // ...
-      });
-  }
-
-  const logInOnClick = () => {
-    console.log('logInOnClick');
-    console.log(showComponent);
-    setshowComponent('SignIn');}
+  
 
   return (
     <div className="App">
@@ -812,16 +826,20 @@ function App() {
         <Button color="primary" onClick={() => setshowComponent("SignUp")}>
           Sign Up
         </Button>
-        <Button color="primary" onClick={logInOnClick}>
+        <Button color="primary" onClick={() => setshowComponent("SignIn")}>
           Log In
         </Button>
         <Button color="primary" onClick={() => setshowComponent("DeleteUser")}>
           Profile
         </Button>
+        <Button color="primary" onClick={() => setshowComponent("ForgotPassword")}>
+          Forgot Password
+        </Button>
+        {/* <Button color="primary" onClick={signedInUsername !== 'Signed In' ? () => setsignedInUsername("Signed In") : () => setsignedInUsername("Logged Out")}>
+          Change Text
+        </Button> */}
       </header>
-      <div>{signedInUsername}</div>
-      <div>{signInSuccessfulText}</div>
-      <div></div>
+      <div >{signedInUsername}</div>
       <Box textAlign="center">
         <Button
           fullWidth
@@ -833,7 +851,6 @@ function App() {
                 // Sign-out successful.
                 console.log("Sign out successful");
                 setsignedInUsername("Logged out");
-                setSignInSuccessfulText("Log Out successful");
               })
               .catch((error) => {
                 // An error happened.
@@ -843,20 +860,15 @@ function App() {
           Log Out
         </Button>
       </Box>
-      { showComponent === "SignUp" ? <SignUp /> : null}
+
+      <Switcher />
+
       {/* <SignUp />
       <SignIn />
       <EmailLink />
       <ForgotPassword />
       <DeleteUser currentUser={currentUser} />
-      <GoogleLoginButton
-        onClick={GoogleHandleClick}
-        style={{ width: "30%", margin: "5px auto 0", display: "block" }}
-      />
-      <FacebookLoginButton
-        onClick={FacebookHandleClick}
-        style={{ width: "30%", margin: "5px auto 0", display: "block" }}
-      /> */}
+      */}
     </div>
   );
 }
