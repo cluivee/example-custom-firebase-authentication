@@ -63,9 +63,6 @@ const auth = getAuth();
 // the current logged in user
 let currentUser = auth.currentUser;
 
-
-
-
 function GoogleHandleClick(event) {
   console.log("Google Sign in clicked: ");
 
@@ -173,6 +170,18 @@ if (isSignInWithEmailLink(auth, window.location.href)) {
     });
 }
 
+// simple default Home component
+
+function Home() {
+  const [homeText, sethomeText] = useState("You are not logged in");
+  return (
+    <div>
+      <h1>Home Page</h1>
+      {currentUser !== null ? <h2>You are logged in so this is visible</h2> : null }
+      {currentUser !== null ? <h2>{`Welcome back, ${currentUser.email}`}</h2>: null }
+    </div>
+  );
+}
 
 // Create New Account Component MUI
 function Copyright(props) {
@@ -195,7 +204,7 @@ function Copyright(props) {
 
 const theme = createTheme();
 
-function SignUp() {
+function SignUp(props) {
   const [signUpErrorText, setsignUpErrorText] = useState("");
 
   const handleSubmit = (event) => {
@@ -253,7 +262,7 @@ function SignUp() {
             alignItems: "center",
           }}
         >
-          <Avatar sx={{ m: 1, bgcolor: "secondary.main" }}>
+          <Avatar sx={{ m: 1, bgcolor: "primary.light" }}>
             <LockOutlinedIcon />
           </Avatar>
           <Typography component="h1" variant="h2" align="center">
@@ -309,13 +318,14 @@ function SignUp() {
               onClick={GoogleHandleClick}
               // style={{ margin: "5px auto 0", display: "block" }}
             />
-            <FacebookLoginButton
-              onClick={FacebookHandleClick}
-              // style={{ margin: "5px auto 0", display: "block" }}
-            />
+            <FacebookLoginButton onClick={FacebookHandleClick} />
             <Grid container justifyContent="flex-end">
               <Grid item>
-                <Link href="#" variant="body2">
+                <Link
+                  href="#"
+                  variant="body2"
+                  onClick={() => props.setshowComponent("SignIn")}
+                >
                   Already have an account? Sign in
                 </Link>
               </Grid>
@@ -330,19 +340,8 @@ function SignUp() {
 
 // SignIn MUI Template Component
 
-function SignIn() {
+function SignIn(props) {
   const [signInErrorText, setsignInErrorText] = useState("");
-
-  // sendPasswordResetEmail(auth, email)
-  // .then(() => {
-  //   // Password reset email sent!
-  //   // ..
-  // })
-  // .catch((error) => {
-  //   const errorCode = error.code;
-  //   const errorMessage = error.message;
-  //   // ..
-  // });
 
   const handleSignInSubmit = (event) => {
     event.preventDefault();
@@ -396,7 +395,7 @@ function SignIn() {
             alignItems: "center",
           }}
         >
-          <Avatar sx={{ m: 1, bgcolor: "secondary.main" }}>
+          <Avatar sx={{ m: 1, bgcolor: "success.light" }}>
             <LockOutlinedIcon />
           </Avatar>
           <Typography component="h1" variant="h2">
@@ -443,14 +442,27 @@ function SignIn() {
             >
               Sign In
             </Button>
+            <GoogleLoginButton
+              onClick={GoogleHandleClick}
+              // style={{ margin: "5px auto 0", display: "block" }}
+            />
+            <FacebookLoginButton onClick={FacebookHandleClick} />
             <Grid container>
               <Grid item xs>
-                <Link href="#" variant="body2">
+                <Link
+                  href="#"
+                  variant="body2"
+                  onClick={() => props.setshowComponent("ForgotPassword")}
+                >
                   Forgot password?
                 </Link>
               </Grid>
               <Grid item>
-                <Link href="#" variant="body2">
+                <Link
+                  href="#"
+                  variant="body2"
+                  onClick={() => props.setshowComponent("SignUp")}
+                >
                   {"Don't have an account? Sign Up"}
                 </Link>
               </Grid>
@@ -581,7 +593,7 @@ function EmailLink() {
 }
 
 // Forgot Password form (created by copying Sign In component)
-function ForgotPassword() {
+function ForgotPassword(props) {
   const [forgotErrorText, setforgotErrorText] = useState("");
 
   const handleForgotSubmit = (event) => {
@@ -661,7 +673,11 @@ function ForgotPassword() {
             </Typography>
             <Grid container>
               <Grid item>
-                <Link href="#" variant="body2">
+                <Link
+                  href="#"
+                  variant="body2"
+                  onClick={() => props.setshowComponent("SignIn")}
+                >
                   {"Don't have an account? Sign Up"}
                 </Link>
               </Grid>
@@ -683,7 +699,9 @@ function DeleteUser() {
     event.preventDefault();
     console.log(currentUser);
 
-    if (window.confirm("Do you really want to delete your account?")) {
+    if (currentUser === null) {
+      setdeleteUserErrorText("You are not logged in");
+    } else if (window.confirm("Do you really want to delete your account?")) {
       deleteUser(currentUser)
         .then(() => {
           console.log("user deleted: ");
@@ -756,11 +774,11 @@ function DeleteUser() {
 }
 
 function App() {
-  console.log("App rerendered")
+  console.log("App rerendered");
   const [signedInUsername, setsignedInUsername] = useState("Logged Out");
 
   const [showComponent, setshowComponent] = useState("SignUp");
-  
+
   /* putting onAuthStateChanged in useEffect sets the onauthstate listener only once when App is first rendered, preventing
   another listener being added when App is rerendered, thereby preventing infinite loops when we change the state in onauthstatechanged.
   This solution took about 2 hours to find: https://stackoverflow.com/questions/61155701/how-to-prevent-infinite-loop-caused-by-onauthstatechanged-firebase-auth.
@@ -779,34 +797,33 @@ function App() {
         // ...
       } else {
         console.log("Auth state changed, Logged Out");
+        setsignedInUsername("Logged out");
         currentUser = user;
         // User is signed out
         // ...
       }
     });
+  }, []);
 
-  }, [])
-  
-
-// this may get moved to a global scope again in the future, as I prefer all the firebase methods being global, and I don't like this function
-// getting rerun again when the App component rerenders
-
+  // this may get moved to a global scope again in the future, as I prefer all the firebase methods being global, and I don't like this function
+  // getting rerun again when the App component rerenders
 
   const Switcher = () => {
     switch (showComponent) {
+      case "Home":
+        return <Home setshowComponent={setshowComponent} />;
       case "SignUp":
-        return <SignUp />;
+        return <SignUp setshowComponent={setshowComponent} />;
       case "SignIn":
-        return <SignIn />;
+        return <SignIn setshowComponent={setshowComponent} />;
       case "DeleteUser":
-        return <DeleteUser />;
+        return <DeleteUser setshowComponent={setshowComponent} />;
       case "ForgotPassword":
-        return <ForgotPassword />;
+        return <ForgotPassword setshowComponent={setshowComponent} />;
       default:
-        return <SignUp />;
+        return <SignUp setshowComponent={setshowComponent} />;
     }
   };
-  
 
   return (
     <div className="App">
@@ -820,7 +837,7 @@ function App() {
           alignItems: "center",
         }}
       >
-        <Button color="primary" onClick={() => setshowComponent("SignUp")}>
+        <Button color="primary" onClick={() => setshowComponent("Home")}>
           Home
         </Button>
         <Button color="primary" onClick={() => setshowComponent("SignUp")}>
@@ -832,25 +849,27 @@ function App() {
         <Button color="primary" onClick={() => setshowComponent("DeleteUser")}>
           Profile
         </Button>
-        <Button color="primary" onClick={() => setshowComponent("ForgotPassword")}>
+        <Button
+          color="primary"
+          onClick={() => setshowComponent("ForgotPassword")}
+        >
           Forgot Password
         </Button>
-        {/* <Button color="primary" onClick={signedInUsername !== 'Signed In' ? () => setsignedInUsername("Signed In") : () => setsignedInUsername("Logged Out")}>
-          Change Text
-        </Button> */}
-      </header>
-      <div >{signedInUsername}</div>
-      <Box textAlign="center">
         <Button
           fullWidth
           variant="contained"
-          sx={{ width: "30%", justifyContent: "center" }}
+          sx={{
+            width: "10%",
+            justifyContent: "center",
+            float: "right",
+            marginLeft: "auto",
+            marginRight: "8px",
+          }}
           onClick={() => {
             signOut(auth)
               .then(() => {
                 // Sign-out successful.
                 console.log("Sign out successful");
-                setsignedInUsername("Logged out");
               })
               .catch((error) => {
                 // An error happened.
@@ -859,7 +878,9 @@ function App() {
         >
           Log Out
         </Button>
-      </Box>
+      </header>
+      <div>{signedInUsername}</div>
+      <Box textAlign="center"></Box>
 
       <Switcher />
 
