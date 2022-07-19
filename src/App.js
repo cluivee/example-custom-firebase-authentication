@@ -59,8 +59,28 @@ const app = initializeApp(firebaseConfig);
 // Initialize Firebase Authentication and get a reference to the service
 
 const auth = getAuth();
-
 const provider = new GoogleAuthProvider();
+
+  // the current logged in user
+  let currentUser = auth.currentUser;
+
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    // User is signed in, see docs for a list of available properties
+    // https://firebase.google.com/docs/reference/js/firebase.User
+    const uid = user.uid;
+    currentUser = user;
+    console.log(
+      "Auth state changed, user is: " + uid + " username: " + user.email
+    );
+    // setsignedInUsername("Signed in user: " + user.email);
+    // ...
+  } else {
+    console.log("Auth state changed, Logged Out");
+    // User is signed out
+    // ...
+  }
+});
 
 // const displayName = "";
 // const email = "";
@@ -136,7 +156,7 @@ function Copyright(props) {
 
 const theme = createTheme();
 
-function SignUp(props) {
+function SignUp() {
   const [signUpErrorText, setsignUpErrorText] = useState("");
 
   const handleSubmit = (event) => {
@@ -161,7 +181,6 @@ function SignUp(props) {
         .then((userCredential) => {
           // Signed in
           const user = userCredential.user;
-          props.setSignInSuccessfulText("Sign in successful!");
           setsignUpErrorText("Account Successfully Created!");
           // ...
         })
@@ -264,7 +283,7 @@ function SignUp(props) {
 
 // SignIn MUI Template Component
 
-function SignIn(props) {
+function SignIn() {
   const [signInErrorText, setsignInErrorText] = useState("");
 
   // sendPasswordResetEmail(auth, email)
@@ -298,7 +317,6 @@ function SignIn(props) {
         .then((userCredential) => {
           // Signed in
           const user = userCredential.user;
-          props.setSignInSuccessfulText("Sign in successful!");
           setsignInErrorText("");
 
           // ...
@@ -622,7 +640,7 @@ function DeleteUser(props) {
       deleteUser(props.currentUser)
         .then(() => {
           console.log("user deleted: ");
-          setdeleteUserErrorText("Account deleted successfully")
+          setdeleteUserErrorText("Account deleted successfully");
         })
         .catch((error) => {
           const errorCode = error.code;
@@ -630,9 +648,11 @@ function DeleteUser(props) {
           console.log(errorCode);
           // An error ocurred
           if (errorCode === "auth/requires-recent-login") {
-            setdeleteUserErrorText("For sensitive operations such as account deletion the user must have logged in recently. Please log out and log in and try again")
+            setdeleteUserErrorText(
+              "For sensitive operations such as account deletion the user must have logged in recently. Please log out and log in and try again"
+            );
           } else {
-            setdeleteUserErrorText("Something went wrong with Delete")
+            setdeleteUserErrorText("Something went wrong with Delete");
             console.log("Something went wrong with Delete");
           }
           // ..
@@ -673,9 +693,14 @@ function DeleteUser(props) {
             >
               Delete My Account
             </Button>
-            <Typography component="h1" variant="caption" align="center" sx={{ color: "red" }}>
-            {deleteUserErrorText}
-          </Typography>
+            <Typography
+              component="h1"
+              variant="caption"
+              align="center"
+              sx={{ color: "red" }}
+            >
+              {deleteUserErrorText}
+            </Typography>
           </Box>
         </Box>
       </Container>
@@ -687,26 +712,27 @@ function App() {
   const [signedInUsername, setsignedInUsername] = useState("Logged Out");
   const [signInSuccessfulText, setSignInSuccessfulText] = useState("");
 
-  // the current logged in user
-  let currentUser = auth.currentUser;
+  const [showComponent, setshowComponent] = useState("SignUp");
 
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      // User is signed in, see docs for a list of available properties
-      // https://firebase.google.com/docs/reference/js/firebase.User
-      const uid = user.uid;
-      currentUser = user;
-      console.log(
-        "Auth state changed, user is: " + uid + " username: " + user.email
-      );
-      setsignedInUsername("Signed in user: " + user.email);
-      // ...
-    } else {
-      console.log("Auth state changed, Logged Out");
-      // User is signed out
-      // ...
-    }
-  });
+  const Switcher = () => {
+  
+    return (
+    <>
+
+    </>);
+    // switch (showComponent) {
+    //   case "SignUp":
+    //     return <SignUp />;
+    //   case "SignIn":
+    //     return <SignIn />;
+    //   case "DeleteUser":
+    //     return <DeleteUser />;
+    //   case "ForgotPassword":
+    //     return <ForgotPassword />;
+    //   default:
+    //     return <SignUp />;
+    // }
+  };
 
   function GoogleHandleClick(event) {
     console.log("Google Sign in clicked: ");
@@ -763,9 +789,36 @@ function App() {
       });
   }
 
+  const logInOnClick = () => {
+    console.log('logInOnClick');
+    console.log(showComponent);
+    setshowComponent('SignIn');}
+
   return (
     <div className="App">
-      <header className="App-header">This is the first page</header>
+      <header
+        className="App-header"
+        style={{
+          backgroundColor: "lightBlue",
+          height: "3rem",
+          textAlign: "center",
+          display: "flex",
+          alignItems: "center",
+        }}
+      >
+        <Button color="primary" onClick={() => setshowComponent("SignUp")}>
+          Home
+        </Button>
+        <Button color="primary" onClick={() => setshowComponent("SignUp")}>
+          Sign Up
+        </Button>
+        <Button color="primary" onClick={logInOnClick}>
+          Log In
+        </Button>
+        <Button color="primary" onClick={() => setshowComponent("DeleteUser")}>
+          Profile
+        </Button>
+      </header>
       <div>{signedInUsername}</div>
       <div>{signInSuccessfulText}</div>
       <div></div>
@@ -790,11 +843,12 @@ function App() {
           Log Out
         </Button>
       </Box>
-      <SignUp setSignInSuccessfulText={setSignInSuccessfulText} />
-      <SignIn setSignInSuccessfulText={setSignInSuccessfulText} />
+      { showComponent === "SignUp" ? <SignUp /> : null}
+      {/* <SignUp />
+      <SignIn />
       <EmailLink />
       <ForgotPassword />
-      <DeleteUser currentUser={currentUser}/>
+      <DeleteUser currentUser={currentUser} />
       <GoogleLoginButton
         onClick={GoogleHandleClick}
         style={{ width: "30%", margin: "5px auto 0", display: "block" }}
@@ -802,7 +856,7 @@ function App() {
       <FacebookLoginButton
         onClick={FacebookHandleClick}
         style={{ width: "30%", margin: "5px auto 0", display: "block" }}
-      />
+      /> */}
     </div>
   );
 }
