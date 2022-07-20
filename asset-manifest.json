@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/example-custom-firebase-authentication/static/css/main.e4c92290.css",
+    "main.js": "/example-custom-firebase-authentication/static/js/main.5ae72cba.js",
+    "index.html": "/example-custom-firebase-authentication/index.html",
+    "main.e4c92290.css.map": "/example-custom-firebase-authentication/static/css/main.e4c92290.css.map",
+    "main.5ae72cba.js.map": "/example-custom-firebase-authentication/static/js/main.5ae72cba.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.e4c92290.css",
+    "static/js/main.5ae72cba.js"
+  ]
+}
