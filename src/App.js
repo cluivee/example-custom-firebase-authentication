@@ -1,4 +1,5 @@
 // Import the functions you need from the SDKs you need
+
 import { initializeApp } from "firebase/app";
 import {
   getAuth,
@@ -43,15 +44,28 @@ import {
   GoogleLoginButton,
 } from "react-social-login-buttons";
 
+
+
+
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyApO_RmF_i4oZglgdAaiZwHNO4mWDCsbO8",
-  authDomain: "auth-firebaseauthentication.firebaseapp.com",
-  projectId: "auth-firebaseauthentication",
-  storageBucket: "auth-firebaseauthentication.appspot.com",
-  messagingSenderId: "83111206827",
-  appId: "1:83111206827:web:f7bc2274def0a45bf9fcee",
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.REACT_APP_FIREBASE_APP_ID,
 };
+
+// Keeping this here because I might use this for Github pages anyway
+// const firebaseConfig = {
+//   apiKey: 'AIzaSyApO_RmF_i4oZglgdAaiZwHNO4mWDCsbO8',
+//   authDomain: 'auth-firebaseauthentication.firebaseapp.com',
+//   projectId: 'auth-firebaseauthentication',
+//   storageBucket: 'auth-firebaseauthentication.appspot.com',
+//   messagingSenderId: '83111206827',
+//   appId: '1:83111206827:web:f7bc2274def0a45bf9fcee',
+// };
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
@@ -782,6 +796,8 @@ function App() {
   /* putting onAuthStateChanged in useEffect sets the onauthstate listener only once when App is first rendered, preventing
   another listener being added when App is rerendered, thereby preventing infinite loops when we change the state in onauthstatechanged.
   This solution took about 2 hours to find: https://stackoverflow.com/questions/61155701/how-to-prevent-infinite-loop-caused-by-onauthstatechanged-firebase-auth.
+  Edit: Could have used useAuthState hook from react-firebase-hooks also, which also gives you access to a 'user' variable telling you if
+  they are logged in or not. That might have been easier.
   */
   useEffect(() => {
     onAuthStateChanged(auth, (user) => {
@@ -852,9 +868,12 @@ function App() {
         <Button
           color="primary"
           onClick={() => setshowComponent("ForgotPassword")}
+          style={{marginRight: 'auto'}}
         >
           Forgot Password
         </Button>
+        <div style={{marginRight: '8px', fontWeight:'700'}}>{signedInUsername}</div>
+
         <Button
           fullWidth
           variant="contained"
@@ -862,7 +881,7 @@ function App() {
             width: "10%",
             justifyContent: "center",
             float: "right",
-            marginLeft: "auto",
+
             marginRight: "8px",
           }}
           onClick={() => {
@@ -879,7 +898,7 @@ function App() {
           Log Out
         </Button>
       </header>
-      <div>{signedInUsername}</div>
+      
       <Box textAlign="center"></Box>
 
       <Switcher />
