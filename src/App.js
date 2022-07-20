@@ -845,7 +845,7 @@ function App() {
         // ...
       } else {
         console.log("Auth state changed, Logged Out");
-        setsignedInUsername("Logged out");
+        setsignedInUsername("Logged Out");
         currentUser = user;
         // User is signed out
         // ...
