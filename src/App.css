@@ -1,0 +1,8 @@
+:root {
+    --background-App: "transparent";
+  }
+
+.App{
+    background-color: var(--background-App);;
+}
+
