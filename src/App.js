@@ -388,7 +388,7 @@ function SignIn(props) {
           const errorCode = error.code;
           const errorMessage = error.message;
           console.log(errorCode);
-          if (errorCode === "auth/user-not-found") {
+          if (errorCode === "auth/user-not-found" || errorCode === "auth/wrong-password" ) {
             setsignInErrorText("No user with these credentials exists");
           } else {
             setsignInErrorText("Something went wrong with sign in");
@@ -842,6 +842,7 @@ function App() {
           "Auth state changed, user is: " + uid + " username: " + user.email
         );
         setsignedInUsername("Signed In: " + user.email);
+        setshowComponent('Home');
         // ...
       } else {
         console.log("Auth state changed, Logged Out");
