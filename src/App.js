@@ -1,5 +1,5 @@
 // Import the functions you need from the SDKs you need
-
+import './App.css'
 import { initializeApp } from "firebase/app";
 import {
   getAuth,
@@ -30,6 +30,7 @@ import Checkbox from "@mui/material/Checkbox";
 import Link from "@mui/material/Link";
 import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
+import Switch from '@mui/material/Switch';
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import Typography from "@mui/material/Typography";
 import Container from "@mui/material/Container";
@@ -43,6 +44,7 @@ import {
   FacebookLoginButton,
   GoogleLoginButton,
 } from "react-social-login-buttons";
+import { FormGroup } from "@mui/material";
 
 
 
@@ -781,9 +783,39 @@ function DeleteUser() {
               {deleteUserErrorText}
             </Typography>
           </Box>
+          <Typography
+              component="h1"
+              variant="h5"
+              align="center"
+            >
+              Dark Theme
+            </Typography>
+            <SwitchLabels />
         </Box>
       </Container>
     </ThemeProvider>
+  );
+}
+
+function SwitchLabels() {
+  const [labelText, setlabelText] = useState('Dark Theme Off')
+
+  const onSwitchChange = () => {
+    if (labelText === 'Dark Theme Off'){
+      setlabelText('Dark Theme On')
+
+      document.documentElement.style.setProperty('--background-App', '#7F8487')
+
+    } else {
+      setlabelText('Dark Theme Off')
+      document.documentElement.style.setProperty('--background-App', 'transparent')
+    }
+  }
+
+  return (
+    <FormGroup>
+      <FormControlLabel control={<Switch onChange={onSwitchChange}/>} label={labelText} />
+    </FormGroup>
   );
 }
 
